@@ -6,11 +6,33 @@ from backend.app.services.recovery_execution_service import (
 )
 
 
-class FakeDB:
+class FakeQuery:
+    def __init__(self, recovered_record=None):
+        self.recovered_record = recovered_record
+
+    def filter(self, *args, **kwargs):
+        return self
+
+    def first(self):
+        return self.recovered_record
+
+
+class FakeRecoveredRecord:
     def __init__(self):
+        self.status = "recovered"
+
+
+class FakeDB:
+    def __init__(self, recovered_record=None):
         self.added = []
         self.commits = 0
         self.refreshes = 0
+        self.recovered_record = recovered_record
+
+    def query(self, model):
+        return FakeQuery(
+            recovered_record=self.recovered_record
+        )
 
     def add(self, value):
         self.added.append(value)
@@ -66,11 +88,36 @@ def test_execution_returns_not_found(mock_analyze):
 @patch(
     "backend.app.services.recovery_execution_service.analyze_transaction"
 )
+def test_execution_blocks_already_recovered(mock_analyze):
+    mock_analyze.return_value = analysis_for(
+        "RETRY",
+    )
+
+    db = FakeDB(
+        recovered_record=FakeRecoveredRecord()
+    )
+
+    result = execute_recovery_action(
+        db,
+        "TXN-TEST-EXEC",
+    )
+
+    assert result["success"] is False
+    assert result["status"] == "blocked"
+    assert result["guardrail"] == "already_recovered"
+    assert db.commits == 0
+    assert not db.added
+
+
+@patch(
+    "backend.app.services.recovery_execution_service.analyze_transaction"
+)
 def test_execution_blocks_manual_review(mock_analyze):
     mock_analyze.return_value = analysis_for(
         "ESCALATE",
         requires_review=True,
     )
+
     db = FakeDB()
 
     result = execute_recovery_action(
@@ -93,6 +140,7 @@ def test_execution_blocks_non_recoverable(mock_analyze):
         "ESCALATE",
         is_recoverable=False,
     )
+
     db = FakeDB()
 
     result = execute_recovery_action(
@@ -112,6 +160,7 @@ def test_execution_blocks_non_automatable_action(mock_analyze):
     mock_analyze.return_value = analysis_for(
         "CUSTOMER_ACTION",
     )
+
     db = FakeDB()
 
     result = execute_recovery_action(
@@ -128,7 +177,10 @@ def test_execution_blocks_non_automatable_action(mock_analyze):
     "backend.app.services.recovery_execution_service.analyze_transaction"
 )
 def test_retry_execution_creates_simulated_audit(mock_analyze):
-    mock_analyze.return_value = analysis_for("RETRY")
+    mock_analyze.return_value = analysis_for(
+        "RETRY"
+    )
+
     db = FakeDB()
 
     result = execute_recovery_action(
@@ -141,6 +193,7 @@ def test_retry_execution_creates_simulated_audit(mock_analyze):
     assert result["recommended_action"] == "RETRY"
     assert result["action"] == "delayed_retry"
     assert result["recovery_id"].startswith("SIM-")
+
     assert db.commits == 1
     assert db.refreshes == 1
     assert len(db.added) == 1
@@ -151,7 +204,10 @@ def test_retry_execution_creates_simulated_audit(mock_analyze):
     "backend.app.services.recovery_execution_service.analyze_transaction"
 )
 def test_remind_execution_creates_simulated_audit(mock_analyze):
-    mock_analyze.return_value = analysis_for("REMIND")
+    mock_analyze.return_value = analysis_for(
+        "REMIND"
+    )
+
     db = FakeDB()
 
     result = execute_recovery_action(
@@ -162,6 +218,7 @@ def test_remind_execution_creates_simulated_audit(mock_analyze):
     assert result["success"] is True
     assert result["recommended_action"] == "REMIND"
     assert result["action"] == "customer_reminder"
+
     assert db.commits == 1
     assert len(db.added) == 1
     assert db.added[0].action == "customer_reminder"

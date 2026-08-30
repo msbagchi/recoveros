@@ -205,9 +205,20 @@ function TransactionPanel({
         ) * 100;
 
 
-    const canExecute =
+    const alreadyRecovered =
+    history.some(
+        (item) =>
+            String(item.status).toLowerCase()
+            === "recovered"
+    );
+
+
+const canExecute =
+    !alreadyRecovered
+    && (
         decision.action === "RETRY"
-        || decision.action === "REMIND";
+        || decision.action === "REMIND"
+    );
 
 
     return (
@@ -669,11 +680,13 @@ function TransactionPanel({
                             }
                         >
 
-                            {executing
+                           {executing
                                 ? "Executing..."
-                                : getActionButtonLabel(
-                                    decision.action
-                                )}
+                                : alreadyRecovered
+                                    ? "Already Recovered"
+                                    : getActionButtonLabel(
+                                        decision.action
+                                    )}
 
                         </button> 
 
@@ -682,11 +695,13 @@ function TransactionPanel({
 
     <p className="guardrail-note">
 
-        {decision.action === "ESCALATE"
-            ? "Automatic execution is blocked. This transaction requires manual operator review."
-            : decision.action === "CUSTOMER_ACTION"
-                ? "Automatic execution is blocked. The customer must resolve the payment issue first."
-                : "Automatic execution is unavailable for this action."}
+        {alreadyRecovered
+            ? "No further recovery action is required. This transaction has already been successfully recovered."
+            : decision.action === "ESCALATE"
+                ? "Automatic execution is blocked. This transaction requires manual operator review."
+                : decision.action === "CUSTOMER_ACTION"
+                    ? "Automatic execution is blocked. The customer must resolve the payment issue first."
+                    : "Automatic execution is unavailable for this action."}
 
     </p>
 
