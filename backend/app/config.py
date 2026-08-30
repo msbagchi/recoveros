@@ -1,16 +1,16 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 
-class Settings(BaseSettings):
-    app_name: str = "RecoverOS"
-    app_env: str = "development"
-    database_url: str = ""
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+class Settings:
+    def __init__(self):
+        self.app_name = os.getenv("APP_NAME", "RecoverOS")
+        self.app_env = os.getenv("APP_ENV", "development")
+        self.database_url = os.getenv(
+            "DATABASE_URL",
+            "postgresql+psycopg://postgres:SQL123@localhost:5432/recoveros",
+        )
 
 
 settings = Settings()
+
+DATABASE_URL = settings.database_url
