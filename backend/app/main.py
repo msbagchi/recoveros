@@ -1,9 +1,19 @@
+import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import (
     CORSMiddleware,
 )
 
 from backend.app.config import settings
+from backend.app.db.init_db import init_database
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_database()
+    yield
 
 from backend.app.api import (
     analytics,
@@ -48,6 +58,7 @@ app = FastAPI(
         "platform for merchants."
     ),
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
@@ -55,19 +66,15 @@ app = FastAPI(
 # CORS
 # =========================================
 
+_raw_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173,https://recoveros-tan.vercel.app",
+)
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5175",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "https://recoveros-tan.vercel.app",
-    ],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
