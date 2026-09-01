@@ -9,7 +9,8 @@ RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 COPY backend /app/backend
 COPY ml /app/ml
 COPY data/generate_data.py /app/data/generate_data.py
-COPY data/generated /app/data/generated
+
+RUN python /app/data/generate_data.py
 
 EXPOSE 8000
 
