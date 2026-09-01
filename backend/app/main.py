@@ -19,6 +19,27 @@ from backend.app.api.recovery_operations import (
 from backend.app.api.merchants import (
     router as merchants_router,
 )
+from backend.app.api.promises import (
+    router as promises_router,
+)
+from backend.app.api.batch_recovery import (
+    router as batch_recovery_router,
+)
+from backend.app.api.escalations import (
+    router as escalations_router,
+)
+from backend.app.api.checkout_abandonment import (
+    router as checkout_abandonment_router,
+)
+from backend.app.api.subscription_recovery import (
+    router as subscription_recovery_router,
+)
+from backend.app.api.mandate_retry import (
+    router as mandate_retry_router,
+)
+from backend.app.api.b2b_receivables import (
+    router as b2b_receivables_router,
+)
 
 app = FastAPI(
     title=settings.app_name,
@@ -85,6 +106,27 @@ app.include_router(
 )
 app.include_router(
     merchants_router
+)
+app.include_router(
+    promises_router
+)
+app.include_router(
+    batch_recovery_router
+)
+app.include_router(
+    escalations_router
+)
+app.include_router(
+    checkout_abandonment_router
+)
+app.include_router(
+    subscription_recovery_router
+)
+app.include_router(
+    mandate_retry_router
+)
+app.include_router(
+    b2b_receivables_router
 )
 
 # =========================================

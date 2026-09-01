@@ -1677,3 +1677,589 @@ td strong {
         font-size: 10px;
     }
 }
+
+/* =========================================
+   TAB NAVIGATION
+========================================= */
+
+.tab-bar {
+    display: flex;
+    gap: 0;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 48px;
+}
+
+.tab-button {
+    padding: 14px 20px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+}
+
+.tab-button:hover {
+    color: #17191c;
+}
+
+.tab-button.active {
+    color: #17191c;
+    font-weight: 700;
+    border-bottom-color: #17191c;
+}
+
+@media (max-width: 600px) {
+    .tab-bar { padding: 0 20px; }
+    .tab-button { padding: 12px 14px; font-size: 13px; }
+}
+
+
+/* =========================================
+   COMPLIANCE / STOPPING RULES
+========================================= */
+
+.compliance-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.compliance-active-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    background: #e9f6ed;
+    color: #166534;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.compliance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.compliance-rule {
+    padding: 20px 24px;
+    border-right: 1px solid #e5e7eb;
+}
+
+.compliance-rule:last-child {
+    border-right: none;
+}
+
+.compliance-rule span {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.compliance-rule strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.compliance-rule small {
+    font-size: 11px;
+    color: #9ca3af;
+    word-break: break-word;
+}
+
+@media (max-width: 700px) {
+    .compliance-grid { grid-template-columns: 1fr; }
+    .compliance-rule { border-right: none; border-bottom: 1px solid #e5e7eb; }
+    .compliance-rule:last-child { border-bottom: none; }
+}
+
+
+/* =========================================
+   BATCH RECOVERY
+========================================= */
+
+.batch-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.batch-run-button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 9px;
+    background: #17191c;
+    color: white;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.batch-run-button:hover {
+    opacity: 0.88;
+}
+
+.batch-run-button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.batch-result {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.batch-stat {
+    flex: 1;
+    min-width: 120px;
+    padding: 18px 22px;
+    border-right: 1px solid #e5e7eb;
+}
+
+.batch-stat:last-child {
+    border-right: none;
+}
+
+.batch-stat span {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.batch-stat strong {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.batch-stat-amount strong {
+    font-size: 18px;
+}
+
+.batch-error {
+    padding: 14px 24px;
+    color: #b91c1c;
+    font-size: 13px;
+    background: #fef2f2;
+    border-top: 1px solid #fecaca;
+}
+
+.batch-history-table {
+    border-top: 1px solid #e5e7eb;
+}
+
+.run-id {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 11px;
+    background: #f0f1f3;
+    padding: 3px 6px;
+    border-radius: 4px;
+    color: #374151;
+}
+
+
+/* =========================================
+   ESCALATION QUEUE
+========================================= */
+
+.escalation-queue {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.escalation-loading,
+.escalation-error {
+    padding: 60px 40px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.escalation-loading .loading-spinner {
+    margin: 0 auto 20px;
+}
+
+.esc-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.esc-stat {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px 24px;
+}
+
+.esc-stat span {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+
+.esc-stat strong {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+}
+
+.esc-stat-pending {
+    border-left: 3px solid #f59e0b;
+}
+
+.esc-stat-approved {
+    border-left: 3px solid #16a34a;
+}
+
+.esc-stat-rejected {
+    border-left: 3px solid #dc2626;
+}
+
+.esc-table-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.esc-badge {
+    display: inline-flex;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.esc-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.esc-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.esc-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.esc-reason {
+    max-width: 280px;
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.4;
+}
+
+.esc-notes-input {
+    width: 100%;
+    min-width: 140px;
+    padding: 7px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+}
+
+.esc-notes-input:focus {
+    border-color: #6b7280;
+}
+
+.esc-notes-text {
+    font-size: 12px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.esc-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.esc-approve-btn,
+.esc-reject-btn {
+    padding: 6px 12px;
+    border-radius: 7px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    border: none;
+}
+
+.esc-approve-btn {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.esc-approve-btn:hover {
+    background: #a7f3d0;
+}
+
+.esc-reject-btn {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.esc-reject-btn:hover {
+    background: #fecaca;
+}
+
+.esc-approve-btn:disabled,
+.esc-reject-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.esc-resolved-at {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+@media (max-width: 900px) {
+    .esc-summary { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .esc-summary { grid-template-columns: 1fr 1fr; }
+}
+
+
+/* =========================================
+   WORKFLOWS TAB
+========================================= */
+
+.workflows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.workflows-header {
+    margin-bottom: 20px;
+}
+
+.workflows-header h2 {
+    margin: 6px 0 0;
+    font-size: 26px;
+    letter-spacing: -0.6px;
+}
+
+.workflow-tab-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.workflow-tab-btn {
+    padding: 9px 16px;
+    border: 1px solid #e0e2e5;
+    border-radius: 8px;
+    background: white;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.workflow-tab-btn:hover {
+    border-color: #9ca3af;
+    color: #17191c;
+}
+
+.workflow-tab-btn.active {
+    background: #17191c;
+    border-color: #17191c;
+    color: white;
+    font-weight: 700;
+}
+
+
+/* =========================================
+   WORKFLOW SECTIONS (shared)
+========================================= */
+
+.wf-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.wf-desc {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+    max-width: 600px;
+}
+
+.wf-summary {
+    display: flex;
+    flex-wrap: wrap;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.wf-stat {
+    flex: 1;
+    min-width: 110px;
+    padding: 16px 20px;
+    border-right: 1px solid #e5e7eb;
+}
+
+.wf-stat:last-child {
+    border-right: none;
+}
+
+.wf-stat span {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    margin-bottom: 7px;
+}
+
+.wf-stat strong {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+}
+
+.wf-loading {
+    padding: 60px 40px;
+    text-align: center;
+    color: #6b7280;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.wf-loading .loading-spinner {
+    margin: 0;
+}
+
+.wf-error {
+    padding: 30px 24px;
+    color: #b91c1c;
+    background: #fef2f2;
+    font-size: 13px;
+}
+
+.wf-action-badge {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.wf-action-high {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.wf-action-medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.wf-action-low {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.wf-reason {
+    font-size: 12px;
+    color: #6b7280;
+    font-family: "SF Mono", "Fira Code", monospace;
+}
+
+.wf-segment {
+    display: inline-flex;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f0f1f3;
+    color: #374151;
+    text-transform: capitalize;
+}
+
+.wf-failure-count {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wf-failure-warn {
+    color: #92400e;
+}
+
+.wf-failure-critical {
+    color: #991b1b;
+}
+
+.wf-attempt {
+    font-weight: 700;
+    font-size: 13px;
+    color: #374151;
+    font-family: "SF Mono", "Fira Code", monospace;
+}
+
+.wf-rationale {
+    font-size: 12px;
+    color: #6b7280;
+    max-width: 260px;
+    line-height: 1.4;
+}
+
+.wf-outstanding {
+    font-size: 13px;
+    color: #374151;
+    font-weight: 600;
+}
+
+.wf-muted {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+@media (max-width: 800px) {
+    .wf-summary { flex-direction: column; }
+    .wf-stat { border-right: none; border-bottom: 1px solid #e5e7eb; }
+    .wf-stat:last-child { border-bottom: none; }
+    .workflow-tab-bar { gap: 6px; }
+    .workflow-tab-btn { font-size: 12px; padding: 8px 12px; }
+}

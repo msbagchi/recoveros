@@ -1,3 +1,54 @@
+STOPPING_RULES = {
+    "max_attempt_number": 3,
+    "min_recoverable_amount": 100.0,
+    "blocked_failure_reasons": [
+        "insufficient_funds",
+        "expired_card",
+        "invalid_card",
+    ],
+}
+
+
+def check_stopping_rules(
+    attempt_number: int,
+    failure_reason: str | None,
+    amount: float,
+) -> tuple[bool, str]:
+
+    if attempt_number >= STOPPING_RULES[
+        "max_attempt_number"
+    ]:
+        return (
+            True,
+            f"Attempt limit reached "
+            f"({attempt_number} of "
+            f"{STOPPING_RULES['max_attempt_number']} "
+            f"allowed)",
+        )
+
+    if failure_reason in STOPPING_RULES[
+        "blocked_failure_reasons"
+    ]:
+        return (
+            True,
+            f"Failure reason '{failure_reason}' "
+            f"requires customer action, "
+            f"not automatic retry",
+        )
+
+    if amount < STOPPING_RULES[
+        "min_recoverable_amount"
+    ]:
+        return (
+            True,
+            f"Amount ₹{amount:.0f} is below "
+            f"minimum recovery threshold "
+            f"₹{STOPPING_RULES['min_recoverable_amount']:.0f}",
+        )
+
+    return False, ""
+
+
 TEMPORARY_FAILURES = {
     "network_error",
     "timeout",

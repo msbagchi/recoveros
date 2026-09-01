@@ -3,7 +3,13 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
+from backend.app.decision.rules import (
+    check_stopping_rules,
+)
 from backend.app.models.recovery import RecoveryAction
+from backend.app.services.escalation_service import (
+    auto_create_escalation,
+)
 from backend.app.services.recovery_service import analyze_transaction
 
 
@@ -56,6 +62,10 @@ def execute_recovery_action(
         )
     )
 
+    merchant_id = transaction.get(
+        "merchant_id"
+    )
+
     # =========================================
     # GUARDRAIL 1
     # ALREADY RECOVERED
@@ -92,10 +102,58 @@ def execute_recovery_action(
 
     # =========================================
     # GUARDRAIL 2
+    # STOPPING RULES
+    # =========================================
+
+    stop_triggered, stop_reason = (
+        check_stopping_rules(
+            attempt_number=int(
+                transaction.get(
+                    "attempt_number", 0
+                )
+                or 0
+            ),
+            failure_reason=transaction.get(
+                "failure_reason"
+            ),
+            amount=float(
+                transaction.get("amount", 0)
+                or 0
+            ),
+        )
+    )
+
+    if stop_triggered:
+        return {
+            "success": False,
+            "status": "blocked",
+            "transaction_id": transaction_id,
+            "recommended_action": recommended_action,
+            "guardrail": "stopping_rule",
+            "message": (
+                "Automatic recovery blocked "
+                "by configured stopping rules."
+            ),
+            "reason": stop_reason,
+        }
+
+    # =========================================
+    # GUARDRAIL 3
     # MANUAL REVIEW
     # =========================================
 
     if requires_review:
+
+        auto_create_escalation(
+            db=db,
+            transaction_id=transaction_id,
+            merchant_id=merchant_id,
+            reason=(
+                "Transaction flagged for manual "
+                "review before automatic recovery."
+            ),
+        )
+
         return {
             "success": False,
             "status": "blocked",
@@ -111,7 +169,7 @@ def execute_recovery_action(
         }
 
     # =========================================
-    # GUARDRAIL 3
+    # GUARDRAIL 4
     # RECOVERABILITY
     # =========================================
 
@@ -131,11 +189,23 @@ def execute_recovery_action(
         }
 
     # =========================================
-    # GUARDRAIL 4
+    # GUARDRAIL 5
     # ACTION ALLOWLIST
     # =========================================
 
     if recommended_action not in ALLOWED_AUTOMATED_ACTIONS:
+
+        auto_create_escalation(
+            db=db,
+            transaction_id=transaction_id,
+            merchant_id=merchant_id,
+            reason=(
+                f"Decision engine recommended "
+                f"'{recommended_action}' which "
+                f"requires human intervention."
+            ),
+        )
+
         return {
             "success": False,
             "status": "blocked",

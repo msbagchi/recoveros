@@ -22,15 +22,53 @@ import TransactionPanel
 import RecoveryOperations
     from "./components/RecoveryOperations";
 
+import PromiseTracker
+    from "./components/PromiseTracker";
+
+import EscalationQueue
+    from "./components/EscalationQueue";
+
+import BatchRecovery
+    from "./components/BatchRecovery";
+
+import CheckoutAbandonment
+    from "./components/CheckoutAbandonment";
+
+import SubscriptionRecovery
+    from "./components/SubscriptionRecovery";
+
+import MandateRetry
+    from "./components/MandateRetry";
+
+import B2BReceivables
+    from "./components/B2BReceivables";
+
 import {
     getMerchants,
     getDashboardSummary,
     getOpportunities,
     getAnalyticsOverview,
     getRecoveryTrends,
+    getStoppingRules,
+    getRecoveryImpact,
 } from "./services/api";
 
 import "./index.css";
+
+
+const TABS = [
+    { id: "dashboard",   label: "Dashboard"   },
+    { id: "promises",    label: "Promises"    },
+    { id: "escalations", label: "Escalations" },
+    { id: "workflows",   label: "Workflows"   },
+];
+
+const WORKFLOW_TABS = [
+    { id: "checkout",      label: "Checkout Abandonment"  },
+    { id: "subscription",  label: "Subscription Recovery" },
+    { id: "mandate",       label: "Mandate Retry"         },
+    { id: "b2b",           label: "B2B Receivables"       },
+];
 
 
 function App() {
@@ -42,6 +80,9 @@ function App() {
         selectedMerchant,
         setSelectedMerchant,
     ] = useState("");
+
+    const [activeTab, setActiveTab] =
+        useState("dashboard");
 
     const [summary, setSummary] =
         useState(null);
@@ -79,6 +120,15 @@ function App() {
     const [reloadKey, setReloadKey] =
         useState(0);
 
+    const [activeWorkflow, setActiveWorkflow] =
+        useState("checkout");
+
+    const [stoppingRules, setStoppingRules] =
+        useState(null);
+
+    const [impact, setImpact] =
+        useState(null);
+
 
     // =========================================
     // LOAD MERCHANTS
@@ -114,6 +164,19 @@ function App() {
 
 
     // =========================================
+    // LOAD STOPPING RULES (once)
+    // =========================================
+
+    useEffect(() => {
+
+        getStoppingRules()
+            .then(setStoppingRules)
+            .catch(console.error);
+
+    }, []);
+
+
+    // =========================================
     // LOAD DASHBOARD
     // =========================================
 
@@ -141,6 +204,7 @@ function App() {
                     opportunityData,
                     analyticsData,
                     trendData,
+                    impactData,
                 ] = await Promise.all([
 
                     getDashboardSummary(
@@ -157,6 +221,10 @@ function App() {
                     ),
 
                     getRecoveryTrends(
+                        merchantId
+                    ),
+
+                    getRecoveryImpact(
                         merchantId
                     ),
 
@@ -182,6 +250,8 @@ function App() {
                 setTrends(
                     trendData.trends || []
                 );
+
+                setImpact(impactData);
 
                 setPriorityFilter(
                     "ALL"
@@ -419,9 +489,39 @@ function App() {
             </header>
 
 
+            {/* =================================
+                TAB NAVIGATION
+            ================================= */}
+
+            <nav className="tab-bar">
+
+                {TABS.map(({ id, label }) => (
+
+                    <button
+                        key={id}
+                        className={
+                            `tab-button${
+                                activeTab === id
+                                    ? " active"
+                                    : ""
+                            }`
+                        }
+                        onClick={() =>
+                            setActiveTab(id)
+                        }
+                    >
+                        {label}
+                    </button>
+
+                ))}
+
+            </nav>
+
+
             <main className="content">
 
-                {refreshing && (
+                {refreshing &&
+                    activeTab === "dashboard" && (
 
                     <div className="refresh-indicator">
 
@@ -438,775 +538,965 @@ function App() {
 
                 )}
 
+
                 {/* =================================
-                    HERO
+                    DASHBOARD TAB
                 ================================= */}
 
-                <section className="hero">
+                {activeTab === "dashboard" && (
 
-                    <div>
+                    <>
 
-                        <p className="eyebrow">
-                            RECOVERY CONTROL CENTER
-                        </p>
+                        {/* =====================
+                            HERO
+                        ===================== */}
 
-                        <h2>
-                            Don't let failed payments
-                            become lost revenue.
-                        </h2>
+                        <section className="hero">
 
-                        <p>
-                            RecoverOS identifies the
-                            payment failures worth acting
-                            on and recommends the safest
-                            next step.
-                        </p>
+                            <div>
 
-                    </div>
+                                <p className="eyebrow">
+                                    RECOVERY CONTROL CENTER
+                                </p>
+
+                                <h2>
+                                    Don't let failed payments
+                                    become lost revenue.
+                                </h2>
+
+                                <p>
+                                    RecoverOS identifies the
+                                    payment failures worth acting
+                                    on and recommends the safest
+                                    next step.
+                                </p>
+
+                            </div>
 
 
-                    <div className="merchant-context">
+                            <div className="merchant-context">
 
-                        <span>
-                            Viewing
-                        </span>
+                                <span>
+                                    Viewing
+                                </span>
 
-                        <strong>
-                            {selectedMerchantName}
-                        </strong>
+                                <strong>
+                                    {selectedMerchantName}
+                                </strong>
 
-                        {refreshing && (
-                            <small>
-                                Updating dashboard...
-                            </small>
+                                {refreshing && (
+                                    <small>
+                                        Updating dashboard...
+                                    </small>
+                                )}
+
+                            </div>
+
+                        </section>
+
+
+                        {error && (
+
+                            <div className="dashboard-warning">
+
+                                <div>
+                                    <strong>
+                                        Dashboard update failed
+                                    </strong>
+
+                                    <span>
+                                        {error}
+                                    </span>
+                                </div>
+
+                                <button
+                                    onClick={() =>
+                                        setReloadKey(
+                                            (value) => value + 1
+                                        )
+                                    }
+                                >
+                                    Retry
+                                </button>
+
+                            </div>
+
                         )}
 
-                    </div>
 
-                </section>
+                        {/* =====================
+                            IMPACT METRICS
+                        ===================== */}
+
+                        {impact && (
+
+                            <section className="metrics">
+
+                                <div className="metric">
+                                    <span>
+                                        Total transaction value
+                                    </span>
+                                    <strong>
+                                        ₹
+                                        {Number(
+                                            analytics
+                                                ?.total_transaction_value ??
+                                            0
+                                        ).toLocaleString(
+                                            "en-IN",
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div className="metric">
+                                    <span>
+                                        Failed payment value
+                                    </span>
+                                    <strong>
+                                        ₹
+                                        {Number(
+                                            analytics
+                                                ?.failed_transaction_value ??
+                                            0
+                                        ).toLocaleString(
+                                            "en-IN",
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div className="metric">
+                                    <span>
+                                        Batch potential recovery
+                                    </span>
+                                    <strong>
+                                        ₹
+                                        {Number(
+                                            impact
+                                                ?.batch_potential_amount ??
+                                            0
+                                        ).toLocaleString(
+                                            "en-IN",
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}
+                                    </strong>
+                                </div>
+
+                                <div className="metric">
+                                    <span>
+                                        Escalations pending
+                                    </span>
+                                    <strong>
+                                        {
+                                            impact
+                                                ?.escalations_pending ??
+                                            0
+                                        }
+                                    </strong>
+                                </div>
+
+                            </section>
+
+                        )}
 
 
-                {error && (
+                        {/* =====================
+                            SECONDARY ANALYTICS
+                        ===================== */}
 
-                    <div className="dashboard-warning">
+                        <section className="analytics-grid">
 
-                        <div>
-                            <strong>
-                                Dashboard update failed
-                            </strong>
+                            <div className="analytics-card">
+                                <span>
+                                    Total transactions
+                                </span>
+                                <strong>
+                                    {
+                                        summary
+                                            ?.total_transactions ??
+                                        0
+                                    }
+                                </strong>
+                                <small>
+                                    Payments processed
+                                </small>
+                            </div>
 
-                            <span>
-                                {error}
-                            </span>
-                        </div>
+                            <div className="analytics-card">
+                                <span>
+                                    Failed transactions
+                                </span>
+                                <strong>
+                                    {
+                                        analytics
+                                            ?.failed_transactions ??
+                                        0
+                                    }
+                                </strong>
+                                <small>
+                                    Transactions requiring attention
+                                </small>
+                            </div>
 
-                        <button
-                            onClick={() =>
-                                setReloadKey(
-                                    (value) => value + 1
-                                )
+                            <div className="analytics-card">
+                                <span>
+                                    Recoverable transactions
+                                </span>
+                                <strong>
+                                    {
+                                        analytics
+                                            ?.recoverable_transactions ??
+                                        0
+                                    }
+                                </strong>
+                                <small>
+                                    Currently eligible for recovery
+                                </small>
+                            </div>
+
+                            <div className="analytics-card">
+                                <span>
+                                    Recoverable value
+                                </span>
+                                <strong>
+                                    ₹
+                                    {Number(
+                                        analytics
+                                            ?.recoverable_value ??
+                                        0
+                                    ).toLocaleString(
+                                        "en-IN",
+                                        {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                        }
+                                    )}
+                                </strong>
+                                <small>
+                                    Value identified as recoverable
+                                </small>
+                            </div>
+
+                            <div className="analytics-card">
+                                <span>
+                                    Batch runs
+                                </span>
+                                <strong>
+                                    {
+                                        impact
+                                            ?.batch_runs_total ??
+                                        0
+                                    }
+                                </strong>
+                                <small>
+                                    Total batch recovery runs
+                                </small>
+                            </div>
+
+                        </section>
+
+
+                        {/* =====================
+                            COMPLIANCE CONFIG
+                        ===================== */}
+
+                        {stoppingRules && (
+
+                            <section className="compliance-section">
+
+                                <div className="section-heading">
+
+                                    <div>
+
+                                        <p className="eyebrow">
+                                            COMPLIANCE CONFIG
+                                        </p>
+
+                                        <h2>
+                                            Active stopping rules
+                                        </h2>
+
+                                    </div>
+
+                                    <span className="compliance-active-badge">
+                                        Active
+                                    </span>
+
+                                </div>
+
+                                <div className="compliance-grid">
+
+                                    <div className="compliance-rule">
+                                        <span>
+                                            Max attempts
+                                        </span>
+                                        <strong>
+                                            {
+                                                stoppingRules.max_attempt_number
+                                            }
+                                        </strong>
+                                        <small>
+                                            Auto-retry limit per transaction
+                                        </small>
+                                    </div>
+
+                                    <div className="compliance-rule">
+                                        <span>
+                                            Min amount
+                                        </span>
+                                        <strong>
+                                            ₹
+                                            {
+                                                stoppingRules.min_recoverable_amount
+                                            }
+                                        </strong>
+                                        <small>
+                                            Minimum recoverable threshold
+                                        </small>
+                                    </div>
+
+                                    <div className="compliance-rule">
+                                        <span>
+                                            Blocked reasons
+                                        </span>
+                                        <strong>
+                                            {
+                                                stoppingRules
+                                                    .blocked_failure_reasons
+                                                    ?.length ?? 0
+                                            }
+                                        </strong>
+                                        <small>
+                                            {stoppingRules
+                                                .blocked_failure_reasons
+                                                ?.join(", ")}
+                                        </small>
+                                    </div>
+
+                                </div>
+
+                            </section>
+
+                        )}
+
+
+                        {/* =====================
+                            BATCH RECOVERY
+                        ===================== */}
+
+                        <BatchRecovery
+                            merchantId={
+                                selectedMerchant ||
+                                null
                             }
-                        >
-                            Retry
-                        </button>
+                        />
 
-                    </div>
+
+                        {/* =====================
+                            RECOVERY TREND
+                        ===================== */}
+
+                        <section className="chart-section">
+
+                            <div className="section-heading">
+
+                                <div>
+
+                                    <p className="eyebrow">
+                                        PERFORMANCE
+                                    </p>
+
+                                    <h2>
+                                        Recovery trend
+                                    </h2>
+
+                                </div>
+
+                            </div>
+
+
+                            <div className="chart-card">
+
+                                {trends.length === 0 ? (
+
+                                    <div className="empty-state">
+                                        No recovery trend data
+                                        for this merchant.
+                                    </div>
+
+                                ) : (
+
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height={320}
+                                    >
+
+                                        <LineChart
+                                            data={trends}
+                                        >
+
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                            />
+
+                                            <XAxis
+                                                dataKey="date"
+                                            />
+
+                                            <YAxis />
+
+                                            <Tooltip />
+
+                                            <Legend />
+
+                                            <Line
+                                                type="monotone"
+                                                dataKey={
+                                                    "successful_recoveries"
+                                                }
+                                                name={
+                                                    "Successful recoveries"
+                                                }
+                                                strokeWidth={3}
+                                                dot={true}
+                                            />
+
+                                            <Line
+                                                type="monotone"
+                                                dataKey={
+                                                    "failed_recoveries"
+                                                }
+                                                name={
+                                                    "Failed recoveries"
+                                                }
+                                                strokeWidth={2}
+                                                dot={true}
+                                            />
+
+                                            <Line
+                                                type="monotone"
+                                                dataKey={
+                                                    "executed_actions"
+                                                }
+                                                name={
+                                                    "Simulated executions"
+                                                }
+                                                strokeWidth={2}
+                                                dot={true}
+                                            />
+
+                                        </LineChart>
+
+                                    </ResponsiveContainer>
+
+                                )}
+
+                            </div>
+
+                        </section>
+
+
+                        {/* =====================
+                            RECOVERED REVENUE
+                        ===================== */}
+
+                        <section className="chart-section">
+
+                            <div className="section-heading">
+
+                                <div>
+
+                                    <p className="eyebrow">
+                                        REVENUE IMPACT
+                                    </p>
+
+                                    <h2>
+                                        Recovered revenue
+                                    </h2>
+
+                                </div>
+
+                            </div>
+
+
+                            <div className="chart-card">
+
+                                {trends.length === 0 ? (
+
+                                    <div className="empty-state">
+                                        No recovered revenue data.
+                                    </div>
+
+                                ) : (
+
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height={320}
+                                    >
+
+                                        <BarChart
+                                            data={trends}
+                                        >
+
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                            />
+
+                                            <XAxis
+                                                dataKey="date"
+                                            />
+
+                                            <YAxis />
+
+                                            <Tooltip />
+
+                                            <Legend />
+
+                                            <Bar
+                                                dataKey={
+                                                    "recovered_amount"
+                                                }
+                                                name={
+                                                    "Recovered amount"
+                                                }
+                                            />
+
+                                        </BarChart>
+
+                                    </ResponsiveContainer>
+
+                                )}
+
+                            </div>
+
+                        </section>
+
+
+                        {/* =====================
+                            OPPORTUNITIES
+                        ===================== */}
+
+                        <section className="opportunities">
+
+                            <div className="section-heading">
+
+                                <div>
+
+                                    <p className="eyebrow">
+                                        PRIORITY QUEUE
+                                    </p>
+
+                                    <h2>
+                                        Recovery opportunities
+                                    </h2>
+
+                                </div>
+
+
+                                <span>
+                                    {
+                                        filteredOpportunities.length
+                                    }
+                                    {" "}
+                                    shown
+                                </span>
+
+                            </div>
+
+
+                            <div className="opportunity-filters">
+
+                                {[
+                                    "ALL",
+                                    "HIGH",
+                                    "MEDIUM",
+                                    "LOW",
+                                ].map((filter) => (
+
+                                    <button
+                                        key={filter}
+                                        className={
+                                            priorityFilter ===
+                                            filter
+                                                ? "filter-button active"
+                                                : "filter-button"
+                                        }
+                                        onClick={() =>
+                                            setPriorityFilter(
+                                                filter
+                                            )
+                                        }
+                                    >
+                                        {filter}
+                                    </button>
+
+                                ))}
+
+                            </div>
+
+
+                            <div className="table-wrapper">
+
+                                <table>
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th>
+                                                Transaction
+                                            </th>
+
+                                            <th>
+                                                Amount
+                                            </th>
+
+                                            <th>
+                                                Recovery chance
+                                            </th>
+
+                                            <th>
+                                                Expected recovery
+                                            </th>
+
+                                            <th>
+                                                Priority
+                                            </th>
+
+                                            <th>
+                                                Action
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+
+                                    <tbody>
+
+                                        {
+                                            filteredOpportunities
+                                                .length === 0
+                                                ? (
+
+                                                    <tr>
+
+                                                        <td
+                                                            colSpan="6"
+                                                            className="empty-state"
+                                                        >
+                                                            <div className="table-empty-content">
+
+                                                                <strong>
+                                                                    No recovery opportunities
+                                                                </strong>
+
+                                                                <span>
+                                                                    No transactions match the
+                                                                    selected merchant and priority
+                                                                    filter.
+                                                                </span>
+
+                                                            </div>
+                                                        </td>
+
+                                                    </tr>
+
+                                                )
+                                                : (
+
+                                                    filteredOpportunities
+                                                        .map(
+                                                            (item) => (
+
+                                                                <tr
+                                                                    key={
+                                                                        item.transaction_id
+                                                                    }
+                                                                >
+
+                                                                    <td>
+
+                                                                        <button
+                                                                            className="transaction-link"
+                                                                            onClick={() =>
+                                                                                setSelectedTransaction(
+                                                                                    item.transaction_id
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                item.transaction_id
+                                                                            }
+                                                                        </button>
+
+                                                                    </td>
+
+
+                                                                    <td>
+                                                                        ₹
+                                                                        {Number(
+                                                                            item.amount ??
+                                                                            0
+                                                                        ).toLocaleString(
+                                                                            "en-IN",
+                                                                            {
+                                                                                minimumFractionDigits: 2,
+                                                                                maximumFractionDigits: 2,
+                                                                            }
+                                                                        )}
+                                                                    </td>
+
+
+                                                                    <td>
+
+                                                                        <div className="probability-cell">
+
+                                                                            <div className="probability-bar">
+
+                                                                                <div
+                                                                                    className="probability-fill"
+                                                                                    style={{
+                                                                                        width: `${Math.min(
+                                                                                            Number(
+                                                                                                item.ml_probability ??
+                                                                                                0
+                                                                                            ) *
+                                                                                            100,
+                                                                                            100
+                                                                                        )}%`,
+                                                                                    }}
+                                                                                />
+
+                                                                            </div>
+
+                                                                            <span>
+                                                                                {(
+                                                                                    Number(
+                                                                                        item.ml_probability ??
+                                                                                        0
+                                                                                    ) *
+                                                                                    100
+                                                                                ).toFixed(
+                                                                                    1
+                                                                                )}
+                                                                                %
+                                                                            </span>
+
+                                                                        </div>
+
+                                                                    </td>
+
+
+                                                                    <td>
+                                                                        ₹
+                                                                        {Number(
+                                                                            item.expected_recovery ??
+                                                                            0
+                                                                        ).toLocaleString(
+                                                                            "en-IN",
+                                                                            {
+                                                                                minimumFractionDigits: 2,
+                                                                                maximumFractionDigits: 2,
+                                                                            }
+                                                                        )}
+                                                                    </td>
+
+
+                                                                    <td>
+
+                                                                        <span
+                                                                            className={
+                                                                                `priority-badge priority-${String(
+                                                                                    item.priority ||
+                                                                                    "LOW"
+                                                                                ).toLowerCase()}`
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                item.priority ||
+                                                                                "LOW"
+                                                                            }
+                                                                        </span>
+
+                                                                    </td>
+
+
+                                                                    <td>
+
+                                                                        <span
+                                                                            className={
+                                                                                `action ${String(
+                                                                                    item.recommended_action ||
+                                                                                    ""
+                                                                                ).toLowerCase()}`
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                item.recommended_action ||
+                                                                                "REVIEW"
+                                                                            }
+                                                                        </span>
+
+                                                                    </td>
+
+                                                                </tr>
+
+                                                            )
+                                                        )
+
+                                                )
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </section>
+
+
+                        {/* =====================
+                            RECOVERY OPERATIONS
+                        ===================== */}
+
+                        <RecoveryOperations
+                            merchantId={
+                                selectedMerchant ||
+                                null
+                            }
+                        />
+
+                    </>
 
                 )}
 
 
                 {/* =================================
-                    MAIN METRICS
+                    PROMISES TAB
                 ================================= */}
 
-                <section className="metrics">
+                {activeTab === "promises" && (
 
-                    <div className="metric">
+                    <PromiseTracker
+                        merchantId={
+                            selectedMerchant ||
+                            null
+                        }
+                    />
 
-                        <span>
-                            Total transaction value
-                        </span>
-
-                        <strong>
-                            ₹
-                            {Number(
-                                analytics
-                                    ?.total_transaction_value ??
-                                0
-                            ).toLocaleString(
-                                "en-IN",
-                                {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                }
-                            )}
-                        </strong>
-
-                    </div>
-
-
-                    <div className="metric">
-
-                        <span>
-                            Failed payment value
-                        </span>
-
-                        <strong>
-                            ₹
-                            {Number(
-                                analytics
-                                    ?.failed_transaction_value ??
-                                0
-                            ).toLocaleString(
-                                "en-IN",
-                                {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                }
-                            )}
-                        </strong>
-
-                    </div>
-
-
-                    <div className="metric">
-
-                        <span>
-                            Recovered amount
-                        </span>
-
-                        <strong>
-                            ₹
-                            {Number(
-                                analytics
-                                    ?.recovered_amount ??
-                                0
-                            ).toLocaleString(
-                                "en-IN",
-                                {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                }
-                            )}
-                        </strong>
-
-                    </div>
-
-
-                    <div className="metric">
-
-                        <span>
-                            Recovery rate
-                        </span>
-
-                        <strong>
-                            {
-                                analytics
-                                    ?.recovery_rate ??
-                                0
-                            }%
-                        </strong>
-
-                    </div>
-
-                </section>
+                )}
 
 
                 {/* =================================
-                    SECONDARY ANALYTICS
+                    ESCALATIONS TAB
                 ================================= */}
 
-                <section className="analytics-grid">
+                {activeTab === "escalations" && (
 
-                    <div className="analytics-card">
+                    <EscalationQueue
+                        merchantId={
+                            selectedMerchant ||
+                            null
+                        }
+                    />
 
-                        <span>
-                            Total transactions
-                        </span>
-
-                        <strong>
-                            {
-                                summary
-                                    ?.total_transactions ??
-                                0
-                            }
-                        </strong>
-
-                        <small>
-                            Payments processed
-                        </small>
-
-                    </div>
-
-
-                    <div className="analytics-card">
-
-                        <span>
-                            Failed transactions
-                        </span>
-
-                        <strong>
-                            {
-                                analytics
-                                    ?.failed_transactions ??
-                                0
-                            }
-                        </strong>
-
-                        <small>
-                            Transactions requiring attention
-                        </small>
-
-                    </div>
-
-
-                    <div className="analytics-card">
-
-                        <span>
-                            Recoverable transactions
-                        </span>
-
-                        <strong>
-                            {
-                                analytics
-                                    ?.recoverable_transactions ??
-                                0
-                            }
-                        </strong>
-
-                        <small>
-                            Currently eligible for recovery
-                        </small>
-
-                    </div>
-
-
-                    <div className="analytics-card">
-
-                        <span>
-                            Recoverable value
-                        </span>
-
-                        <strong>
-                            ₹
-                            {Number(
-                                analytics
-                                    ?.recoverable_value ??
-                                0
-                            ).toLocaleString(
-                                "en-IN",
-                                {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                }
-                            )}
-                        </strong>
-
-                        <small>
-                            Value identified as recoverable
-                        </small>
-
-                    </div>
-
-
-                    <div className="analytics-card">
-
-                        <span>
-                            Successful recoveries
-                        </span>
-
-                        <strong>
-                            {
-                                analytics
-                                    ?.successful_recoveries ??
-                                0
-                            }
-                        </strong>
-
-                        <small>
-                            Completed recovery actions
-                        </small>
-
-                    </div>
-
-                </section>
+                )}
 
 
                 {/* =================================
-                    RECOVERY TREND
+                    WORKFLOWS TAB
                 ================================= */}
 
-                <section className="chart-section">
+                {activeTab === "workflows" && (
 
-                    <div className="section-heading">
+                    <div className="workflows-container">
 
-                        <div>
+                        <div className="workflows-header">
 
-                            <p className="eyebrow">
-                                PERFORMANCE
-                            </p>
-
-                            <h2>
-                                Recovery trend
-                            </h2>
+                            <div>
+                                <p className="eyebrow">
+                                    TRACK 03 — EXAMPLE DIRECTIONS
+                                </p>
+                                <h2>
+                                    Specialized recovery workflows
+                                </h2>
+                            </div>
 
                         </div>
 
-                    </div>
+                        <nav className="workflow-tab-bar">
 
+                            {WORKFLOW_TABS.map(
+                                ({ id, label }) => (
 
-                    <div className="chart-card">
-
-                        {trends.length === 0 ? (
-
-                            <div className="empty-state">
-                                No recovery trend data
-                                for this merchant.
-                            </div>
-
-                        ) : (
-
-                            <ResponsiveContainer
-                                width="100%"
-                                height={320}
-                            >
-
-                                <LineChart
-                                    data={trends}
-                                >
-
-                                    <CartesianGrid
-                                        strokeDasharray="3 3"
-                                    />
-
-                                    <XAxis
-                                        dataKey="date"
-                                    />
-
-                                    <YAxis />
-
-                                    <Tooltip />
-
-                                    <Legend />
-
-                                    <Line
-                                        type="monotone"
-                                        dataKey={
-                                            "successful_recoveries"
+                                    <button
+                                        key={id}
+                                        className={
+                                            `workflow-tab-btn${
+                                                activeWorkflow === id
+                                                    ? " active"
+                                                    : ""
+                                            }`
                                         }
-                                        name={
-                                            "Successful recoveries"
+                                        onClick={() =>
+                                            setActiveWorkflow(id)
                                         }
-                                        strokeWidth={3}
-                                        dot={true}
-                                    />
+                                    >
+                                        {label}
+                                    </button>
 
-                                    <Line
-                                        type="monotone"
-                                        dataKey={
-                                            "failed_recoveries"
-                                        }
-                                        name={
-                                            "Failed recoveries"
-                                        }
-                                        strokeWidth={2}
-                                        dot={true}
-                                    />
+                                )
+                            )}
 
-                                    <Line
-                                        type="monotone"
-                                        dataKey={
-                                            "executed_actions"
-                                        }
-                                        name={
-                                            "Simulated executions"
-                                        }
-                                        strokeWidth={2}
-                                        dot={true}
-                                    />
+                        </nav>
 
-                                </LineChart>
+                        {activeWorkflow === "checkout" && (
+                            <CheckoutAbandonment
+                                merchantId={
+                                    selectedMerchant || null
+                                }
+                            />
+                        )}
 
-                            </ResponsiveContainer>
+                        {activeWorkflow === "subscription" && (
+                            <SubscriptionRecovery
+                                merchantId={
+                                    selectedMerchant || null
+                                }
+                            />
+                        )}
 
+                        {activeWorkflow === "mandate" && (
+                            <MandateRetry
+                                merchantId={
+                                    selectedMerchant || null
+                                }
+                            />
+                        )}
+
+                        {activeWorkflow === "b2b" && (
+                            <B2BReceivables
+                                merchantId={
+                                    selectedMerchant || null
+                                }
+                            />
                         )}
 
                     </div>
 
-                </section>
-
-
-                {/* =================================
-                    RECOVERED REVENUE
-                ================================= */}
-
-                <section className="chart-section">
-
-                    <div className="section-heading">
-
-                        <div>
-
-                            <p className="eyebrow">
-                                REVENUE IMPACT
-                            </p>
-
-                            <h2>
-                                Recovered revenue
-                            </h2>
-
-                        </div>
-
-                    </div>
-
-
-                    <div className="chart-card">
-
-                        {trends.length === 0 ? (
-
-                            <div className="empty-state">
-                                No recovered revenue data.
-                            </div>
-
-                        ) : (
-
-                            <ResponsiveContainer
-                                width="100%"
-                                height={320}
-                            >
-
-                                <BarChart
-                                    data={trends}
-                                >
-
-                                    <CartesianGrid
-                                        strokeDasharray="3 3"
-                                    />
-
-                                    <XAxis
-                                        dataKey="date"
-                                    />
-
-                                    <YAxis />
-
-                                    <Tooltip />
-
-                                    <Legend />
-
-                                    <Bar
-                                        dataKey={
-                                            "recovered_amount"
-                                        }
-                                        name={
-                                            "Recovered amount"
-                                        }
-                                    />
-
-                                </BarChart>
-
-                            </ResponsiveContainer>
-
-                        )}
-
-                    </div>
-
-                </section>
-
-
-                {/* =================================
-                    OPPORTUNITIES
-                ================================= */}
-
-                <section className="opportunities">
-
-                    <div className="section-heading">
-
-                        <div>
-
-                            <p className="eyebrow">
-                                PRIORITY QUEUE
-                            </p>
-
-                            <h2>
-                                Recovery opportunities
-                            </h2>
-
-                        </div>
-
-
-                        <span>
-                            {
-                                filteredOpportunities.length
-                            }
-                            {" "}
-                            shown
-                        </span>
-
-                    </div>
-
-
-                    <div className="opportunity-filters">
-
-                        {[
-                            "ALL",
-                            "HIGH",
-                            "MEDIUM",
-                            "LOW",
-                        ].map((filter) => (
-
-                            <button
-                                key={filter}
-                                className={
-                                    priorityFilter ===
-                                    filter
-                                        ? "filter-button active"
-                                        : "filter-button"
-                                }
-                                onClick={() =>
-                                    setPriorityFilter(
-                                        filter
-                                    )
-                                }
-                            >
-                                {filter}
-                            </button>
-
-                        ))}
-
-                    </div>
-
-
-                    <div className="table-wrapper">
-
-                        <table>
-
-                            <thead>
-
-                                <tr>
-
-                                    <th>
-                                        Transaction
-                                    </th>
-
-                                    <th>
-                                        Amount
-                                    </th>
-
-                                    <th>
-                                        Recovery chance
-                                    </th>
-
-                                    <th>
-                                        Expected recovery
-                                    </th>
-
-                                    <th>
-                                        Priority
-                                    </th>
-
-                                    <th>
-                                        Action
-                                    </th>
-
-                                </tr>
-
-                            </thead>
-
-
-                            <tbody>
-
-                                {
-                                    filteredOpportunities
-                                        .length === 0
-                                        ? (
-
-                                            <tr>
-
-                                                <td
-                                                    colSpan="6"
-                                                    className="empty-state"
-                                                >
-                                                    <div className="table-empty-content">
-
-                                                        <strong>
-                                                            No recovery opportunities
-                                                        </strong>
-
-                                                        <span>
-                                                            No transactions match the
-                                                            selected merchant and priority
-                                                            filter.
-                                                        </span>
-
-                                                    </div>
-                                                </td>
-
-                                            </tr>
-
-                                        )
-                                        : (
-
-                                            filteredOpportunities
-                                                .map(
-                                                    (item) => (
-
-                                                        <tr
-                                                            key={
-                                                                item.transaction_id
-                                                            }
-                                                        >
-
-                                                            <td>
-
-                                                                <button
-                                                                    className="transaction-link"
-                                                                    onClick={() =>
-                                                                        setSelectedTransaction(
-                                                                            item.transaction_id
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        item.transaction_id
-                                                                    }
-                                                                </button>
-
-                                                            </td>
-
-
-                                                            <td>
-                                                                ₹
-                                                                {Number(
-                                                                    item.amount ??
-                                                                    0
-                                                                ).toLocaleString(
-                                                                    "en-IN",
-                                                                    {
-                                                                        minimumFractionDigits: 2,
-                                                                        maximumFractionDigits: 2,
-                                                                    }
-                                                                )}
-                                                            </td>
-
-
-                                                            <td>
-
-                                                                <div className="probability-cell">
-
-                                                                    <div className="probability-bar">
-
-                                                                        <div
-                                                                            className="probability-fill"
-                                                                            style={{
-                                                                                width: `${Math.min(
-                                                                                    Number(
-                                                                                        item.ml_probability ??
-                                                                                        0
-                                                                                    ) *
-                                                                                    100,
-                                                                                    100
-                                                                                )}%`,
-                                                                            }}
-                                                                        />
-
-                                                                    </div>
-
-                                                                    <span>
-                                                                        {(
-                                                                            Number(
-                                                                                item.ml_probability ??
-                                                                                0
-                                                                            ) *
-                                                                            100
-                                                                        ).toFixed(
-                                                                            1
-                                                                        )}
-                                                                        %
-                                                                    </span>
-
-                                                                </div>
-
-                                                            </td>
-
-
-                                                            <td>
-                                                                ₹
-                                                                {Number(
-                                                                    item.expected_recovery ??
-                                                                    0
-                                                                ).toLocaleString(
-                                                                    "en-IN",
-                                                                    {
-                                                                        minimumFractionDigits: 2,
-                                                                        maximumFractionDigits: 2,
-                                                                    }
-                                                                )}
-                                                            </td>
-
-
-                                                            <td>
-
-                                                                <span
-                                                                    className={
-                                                                        `priority-badge priority-${String(
-                                                                            item.priority ||
-                                                                            "LOW"
-                                                                        ).toLowerCase()}`
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        item.priority ||
-                                                                        "LOW"
-                                                                    }
-                                                                </span>
-
-                                                            </td>
-
-
-                                                            <td>
-
-                                                                <span
-                                                                    className={
-                                                                        `action ${String(
-                                                                            item.recommended_action ||
-                                                                            ""
-                                                                        ).toLowerCase()}`
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        item.recommended_action ||
-                                                                        "REVIEW"
-                                                                    }
-                                                                </span>
-
-                                                            </td>
-
-                                                        </tr>
-
-                                                    )
-                                                )
-
-                                        )
-                                }
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </section>
-
-
-                {/* =================================
-                    RECOVERY OPERATIONS
-                ================================= */}
-
-                <RecoveryOperations
-                    merchantId={
-                        selectedMerchant ||
-                        null
-                    }
-                />
+                )}
 
             </main>
 

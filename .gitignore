@@ -45,3 +45,6 @@ htmlcov/
 !ml/models/
 !ml/models/recovery_model.joblib
 !ml/models/model_metrics.csv
+
+# Claude Code local files — never push
+.claude/

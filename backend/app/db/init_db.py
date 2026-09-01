@@ -4,6 +4,9 @@ from backend.app.models import (
     Customer,
     Transaction,
     RecoveryAction,
+    PromiseToPay,
+    BatchRun,
+    Escalation,
 )
 
 

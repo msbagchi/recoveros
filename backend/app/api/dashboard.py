@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from backend.app.db.database import SessionLocal
+from backend.app.decision.rules import STOPPING_RULES
 
 
 router = APIRouter(
@@ -221,7 +222,8 @@ def dashboard_summary(
         )
 
     return {
-        "merchant_id": merchant_id,
+        "merchant_id":
+            merchant_id,
         "total_transactions":
             int(total_transactions),
         "failed_transactions":
@@ -248,3 +250,8 @@ def dashboard_summary(
                 2,
             ),
     }
+
+
+@router.get("/stopping-rules")
+def stopping_rules():
+    return STOPPING_RULES

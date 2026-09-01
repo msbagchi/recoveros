@@ -10,6 +10,7 @@ def get_transaction_features(
         """
         SELECT
             t.transaction_id,
+            t.merchant_id,
             t.customer_id,
             t.amount,
             t.currency,
