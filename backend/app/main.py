@@ -14,20 +14,19 @@ from backend.app.db.database import engine
 from sqlalchemy import text
 
 
-def _is_empty():
+def _table_empty(table: str) -> bool:
     with engine.connect() as conn:
-        count = conn.execute(
-            text("SELECT COUNT(*) FROM merchants")
-        ).scalar()
-        return count == 0
+        return conn.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar() == 0
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_database()
-    if _is_empty():
-        print("Empty database detected — seeding initial data...")
+    if _table_empty("merchants"):
+        print("Empty database — seeding base data...")
         seed_database()
+    if _table_empty("promise_to_pay"):
+        print("Seeding promises, escalations, batch runs...")
         seed_new_tables()
     yield
 
