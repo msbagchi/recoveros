@@ -8,11 +8,27 @@ from fastapi.middleware.cors import (
 
 from backend.app.config import settings
 from backend.app.db.init_db import init_database
+from backend.app.db.seed import seed_database
+from backend.app.db.seed_new_tables import seed as seed_new_tables
+from backend.app.db.database import engine
+from sqlalchemy import text
+
+
+def _is_empty():
+    with engine.connect() as conn:
+        count = conn.execute(
+            text("SELECT COUNT(*) FROM merchants")
+        ).scalar()
+        return count == 0
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_database()
+    if _is_empty():
+        print("Empty database detected — seeding initial data...")
+        seed_database()
+        seed_new_tables()
     yield
 
 from backend.app.api import (
