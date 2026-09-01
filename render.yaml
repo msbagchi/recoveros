@@ -1,7 +1,6 @@
 databases:
   - name: recoveros-db
     databaseName: recoveros
-    user: postgres
     plan: free
 
 services:
